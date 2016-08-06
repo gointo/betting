@@ -4,85 +4,72 @@ import (
 	"bytes"
 	"bufio"
 	"encoding/json"
-	//"io/ioutil"
 	"log"
 	"os"
 	"net/http"
-	//"net/url"
 
 	"github.com/gointo/oauth"
 )
-// Usage is the command line helper
-//func Usage() {
-//	fmt.Println("Usage:")
-//	fmt.Print("go run examples/twitter/twitter.go")
-//	fmt.Print("  --consumerkey <consumerkey>")
-//	fmt.Println("  --consumersecret <consumersecret>")
-//	fmt.Println("")
-//	fmt.Println("In order to get your consumerkey and consumersecret, you must register an 'app' at twitter.com:")
-//	fmt.Println("https://dev.twitter.com/apps/new")
-//}
 
 // StreamParams let give params to filter a public stream
 type StreamParams struct {
 	Follow string `json:"follow"`
 }
 
-func main() {
-	// set stream parameters
+// GetURL return the url with the followers in query
+func GetURL() string {
 	streamParams := StreamParams {
 		Follow: "?follow=349094942,633673441,4221690875,3096291947,3096291947",
 	}
-	consumerKey := os.Getenv("CONSUMER_KEY")
-	consumerSecret := os.Getenv("CONSUMER_SECRET")
-	accessToken := os.Getenv("ACCESS_TOKEN")
-	accessTokenSecret := os.Getenv("ACCESS_TOKEN_SECRET")
-	if len(consumerKey) == 0 ||
-			len(consumerSecret) == 0 ||
-			len(accessToken) == 0 ||
-			len(accessTokenSecret) == 0 {
-		log.Fatalf("Config wrong!!!!")
+	TwitterEndpoint := string(os.Args[1])
+	TwitterEndpoint += streamParams.Follow
+	return TwitterEndpoint
+}
+
+// GetEnvCreds return credentials required from environement variables
+func GetEnvCreds() (string, string, string, string){
+	CK, CS, AT, ATS := os.Getenv("CONSUMER_KEY"), os.Getenv("CONSUMER_SECRET"),
+		os.Getenv("ACCESS_TOKEN"), os.Getenv("ACCESS_TOKEN_SECRET")
+	if len(CK) == 0 || len(CS) == 0 || len(AT) == 0 || len(ATS) == 0 {
+		log.Fatalf("Problem with environment variables credentials:\nConsumer Key Length: %d\nConsumer Secret: %d\nAccess Token Length: %d\nAccess Token Secret Length: %d",
+					CK, CS, AT, ATS)
 	}
+	return CK, CS, AT, ATS
+}
+
+// GetClient return a client setted with the good credentials and token
+func GetClient() *http.Client {
+	consumerKey, consumerSecret, accessToken, accessTokenSecret := GetEnvCreds()
 	consumer := oauth.NewConsumer(consumerKey,
 		consumerSecret,
 		oauth.ServiceProvider{})
-	//NOTE: remove this line or turn off Debug if you don't
-	//want to see what the headers look like
 	// log.Println("Header: ", consumer.Debug(true))
-	//Roll your own AccessToken struct
 	accessTok := &oauth.AccessToken{Token: accessToken,
 		Secret: accessTokenSecret}
-	TwitterEndpoint := string(os.Args[1])
-	client,err := consumer.MakeHttpClient(accessTok)
+	client, err := consumer.MakeHttpClient(accessTok)
 	if err != nil {
 		log.Fatal(err)
 	}
-	params, err := json.Marshal(streamParams)
-	if err != nil {
-		log.Fatal(err)
-	}
-	TwitterEndpoint += streamParams.Follow
-	req, err := http.NewRequest("POST", TwitterEndpoint, bytes.NewBuffer(params))
+	return client
+}
+
+// GetRequest return an HTTP request setted with the good method and url
+func GetRequest() *http.Request {
+	// GetURL stream parameters
+	url := GetURL()
+	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		panic(err)
 	}
-	//req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "go-twitter v0.1")
-	//#test := url.Parse(TwitterEndpoint)
-	log.Printf("Request: %v", req)
-	response, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err, response)
-	}
-	defer response.Body.Close()
-	log.Println("Response:", response.StatusCode, response.Status)
-	//go func() {
-	reader := bufio.NewReader(response.Body)
-	var body message
+	return req
+}
+
+// TreatResponse run on the stream to get json responses
+func TreatResponse(reader *bufio.Reader, body *message) {
 	for {
 		line, _ := reader.ReadBytes('\r')
 		line = bytes.TrimSpace(line)
-		//log.Printf("JSON answer lenght: %d", len(string(line)))
 		if len(line) == 0 {
 			continue
 		}
@@ -99,4 +86,24 @@ func main() {
 				body.Text)
 		}
 	}
+}
+
+// GetStream launch all the request logic
+func GetStream() {
+	client := GetClient()
+	request := GetRequest()
+	log.Printf("Request: %v", request)
+	response, err := client.Do(request)
+	if err != nil {
+		log.Fatal(err, response)
+	}
+	defer response.Body.Close()
+	log.Println("Response:", response.StatusCode, response.Status)
+	reader := bufio.NewReader(response.Body)
+	var body message
+	TreatResponse(reader, &body)
+}
+
+func main() {
+	GetStream()
 }
