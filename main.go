@@ -2,9 +2,10 @@ package main
 
 import (
 	"bytes"
+	"bufio"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	//"io/ioutil"
 	"log"
 	"os"
 	"net/http"
@@ -37,8 +38,10 @@ func main() {
 	consumerSecret := os.Getenv("CONSUMER_SECRET")
 	accessToken := os.Getenv("ACCESS_TOKEN")
 	accessTokenSecret := os.Getenv("ACCESS_TOKEN_SECRET")
-	if len(consumerKey) == 0 || len(consumerSecret) == 0 ||
-			len(accessToken) == 0 || len(accessTokenSecret) == 0 {
+	if len(consumerKey) == 0 ||
+			len(consumerSecret) == 0 ||
+			len(accessToken) == 0 ||
+			len(accessTokenSecret) == 0 {
 		log.Fatalf("Config wrong!!!!")
 	}
 	consumer := oauth.NewConsumer(consumerKey,
@@ -59,23 +62,26 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	TwitterEndpoint += "?follow=51091012"
 	req, err := http.NewRequest("POST", TwitterEndpoint, bytes.NewBuffer(params))
 	if err != nil {
 		panic(err)
 	}
-	req.Header.Set("Content-Type", "application/json")
-	//test := url.Parse(TwitterEndpoint)
+	//req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "go-twitter v0.1")
+	//#test := url.Parse(TwitterEndpoint)
 	log.Print(req)
-	//test := TwitterEndpoint + "?follow=51091012"
 	response, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err, response)
 	}
 	defer response.Body.Close()
 	fmt.Println("Response:", response.StatusCode, response.Status)
-	respBody, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Fatal(err)
+	//go func() {
+	reader := bufio.NewReader(response.Body)
+	for {
+		line, _ := reader.ReadBytes('\r')
+		line = bytes.TrimSpace(line)
+		fmt.Println(string(line))
 	}
-	fmt.Println(string(respBody))
 }
