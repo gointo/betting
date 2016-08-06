@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"bufio"
 	"encoding/json"
-	"fmt"
 	//"io/ioutil"
 	"log"
 	"os"
@@ -26,13 +25,13 @@ import (
 
 // StreamParams let give params to filter a public stream
 type StreamParams struct {
-	Follow []string `json:"follow"`
+	Follow string `json:"follow"`
 }
 
 func main() {
 	// set stream parameters
 	streamParams := StreamParams {
-		Follow: []string{"51091012,349094942"},
+		Follow: "?follow=349094942,633673441,4221690875,3096291947,3096291947",
 	}
 	consumerKey := os.Getenv("CONSUMER_KEY")
 	consumerSecret := os.Getenv("CONSUMER_SECRET")
@@ -49,11 +48,11 @@ func main() {
 		oauth.ServiceProvider{})
 	//NOTE: remove this line or turn off Debug if you don't
 	//want to see what the headers look like
-	consumer.Debug(true)
+	// log.Println("Header: ", consumer.Debug(true))
 	//Roll your own AccessToken struct
 	accessTok := &oauth.AccessToken{Token: accessToken,
 		Secret: accessTokenSecret}
-	TwitterEndpoint := os.Args[1]
+	TwitterEndpoint := string(os.Args[1])
 	client,err := consumer.MakeHttpClient(accessTok)
 	if err != nil {
 		log.Fatal(err)
@@ -62,7 +61,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	TwitterEndpoint += "?follow=51091012"
+	TwitterEndpoint += streamParams.Follow
 	req, err := http.NewRequest("POST", TwitterEndpoint, bytes.NewBuffer(params))
 	if err != nil {
 		panic(err)
@@ -70,18 +69,30 @@ func main() {
 	//req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "go-twitter v0.1")
 	//#test := url.Parse(TwitterEndpoint)
-	log.Print(req)
+	log.Printf("Request: %v", req)
 	response, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err, response)
 	}
 	defer response.Body.Close()
-	fmt.Println("Response:", response.StatusCode, response.Status)
+	log.Println("Response:", response.StatusCode, response.Status)
 	//go func() {
 	reader := bufio.NewReader(response.Body)
+	var body message
 	for {
 		line, _ := reader.ReadBytes('\r')
 		line = bytes.TrimSpace(line)
-		fmt.Println(string(line))
+		//log.Printf("JSON answer lenght: %d", len(string(line)))
+		if len(line) == 0 {
+			continue
+		}
+		err := json.Unmarshal(line, &body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf(
+			"\nTweet Name: %s\nContent: %s\n\n\n",
+			body.User.ScreenName,
+			body.Text)
 	}
 }
