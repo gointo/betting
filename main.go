@@ -90,9 +90,13 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Printf(
-			"\nTweet Name: %s\nContent: %s\n\n\n",
-			body.User.ScreenName,
-			body.Text)
+		if body.User.ID == 349094942 || body.User.ID == 633673441 ||
+				body.User.ID == 4221690875 || body.User.ID == 3096291947 ||
+				body.User.ID == 3096291947 {
+			log.Printf(
+				"\nName: \033[1;31m%s\033[0m\n\033[1;32m%s\033[0m\n\n\n",
+				body.User.ScreenName,
+				body.Text)
+		}
 	}
 }
