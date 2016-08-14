@@ -14,10 +14,11 @@ dependencies:
   override:
     # get main linters
     - go get -u github.com/alecthomas/gometalinter
+    - gometalinter --install
     # './...' is a relative pattern which means all subdirectories
     - go get -t -d -v ./...
     - go build -v
 ## Customize test commands
 test:
   override:
-    - gometalinter --install
+    - gometalinter
