@@ -1,0 +1,23 @@
+## Customize the test machine
+machine:
+
+  timezone:
+    Europe/Paris # Set the timezone
+
+  # Version of ruby to use
+  go:
+    version:
+      - go
+      - go1.5.3
+
+dependencies:
+  override:
+    # get main linters
+    - go get -u github.com/alecthomas/gometalinter
+    # './...' is a relative pattern which means all subdirectories
+    - go get -t -d -v ./...
+    - go build -v
+## Customize test commands
+test:
+  override:
+    - gometalinter --install
