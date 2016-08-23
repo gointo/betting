@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"bufio"
 	"encoding/json"
+	//"io"
 	"log"
 	"os"
 	"net/http"
@@ -13,16 +14,17 @@ import (
 
 // StreamParams let give params to filter a public stream
 type StreamParams struct {
-	Follow string `json:"follow"`
+	With string `json:"follow"`
 }
 
 // GetURL return the url with the followers in query
 func GetURL() string {
 	streamParams := StreamParams {
-		Follow: "?follow=349094942,633673441,4221690875,3096291947,3096291947",
+		//Follow: "?follow=349094942,4197365524",
+		With: "?with=followings",
 	}
 	TwitterEndpoint := string(os.Args[1])
-	TwitterEndpoint += streamParams.Follow
+	TwitterEndpoint += streamParams.With
 	return TwitterEndpoint
 }
 
@@ -57,7 +59,7 @@ func GetClient() *http.Client {
 func GetRequest() *http.Request {
 	// GetURL stream parameters
 	url := GetURL()
-	req, err := http.NewRequest("POST", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -67,23 +69,26 @@ func GetRequest() *http.Request {
 
 // TreatResponse run on the stream to get json responses
 func TreatResponse(reader *bufio.Reader, body *message) {
+	//var data map[string]interface{}
 	for {
-		line, _ := reader.ReadBytes('\r')
+		line, _ := reader.ReadBytes('\n')
 		line = bytes.TrimSpace(line)
 		if len(line) == 0 {
 			continue
 		}
 		err := json.Unmarshal(line, &body)
+		//err := json.Unmarshal(line, &data)
+		//log.Printf("line: %v\ndata: %v", line, data)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("err: %v", err)
+		//	log.Fatal(err)
 		}
-		if body.User.ID == 349094942 || body.User.ID == 633673441 ||
-				body.User.ID == 4221690875 || body.User.ID == 3096291947 ||
-				body.User.ID == 3096291947 {
+		if body.User.ID == 349094942 || body.User.ID == 4197365524 {
 			log.Printf(
 				"\nName: \033[1;31m%s\033[0m\n\033[1;32m%s\033[0m\n\n\n",
 				body.User.ScreenName,
 				body.Text)
+		//log.Printf("\n%v\n", data)
 		}
 	}
 }
