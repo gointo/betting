@@ -1,0 +1,27 @@
+## Customize the test machine
+machine:
+  environment:
+    # GOROOT is not set by default
+    GOROOT: ""
+    PATH: "/usr/local/go/bin:/usr/local/go_workspace/bin:~/.go_workspace/bin:${PATH}"
+    GOPATH: "${HOME}/.go_workspace:/usr/local/go_workspace:${HOME}/.go_project"
+
+  timezone:
+    Europe/Paris # Set the timezone
+
+dependencies:
+  pre:
+    # get main linters
+    - go get -u github.com/gointo/oauth
+    - go get -u github.com/alecthomas/gometalinter
+      # - gometalinter --install
+    # './...' is a relative pattern which means all subdirectories
+  override:
+    - go get -t -d -v ./...
+    - go build -v
+
+## Customize test commands
+test:
+  override:
+    - gometalinter --help
+    - gometalinter --exclude={aligncheck,errcheck} --deadline=30s ./...

@@ -5,7 +5,6 @@ with import <nixpkgs> {}; {
     shellHook =
       ''
         export GOPATH=~/go_workspace
-        go get github.com/gointo/oauth
       '';
   };
 }

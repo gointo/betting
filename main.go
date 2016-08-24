@@ -24,7 +24,7 @@ func GetURL() string {
 		//Follow: "?follow=349094942,4197365524",
 		With: "?with=followings",
 	}
-	TwitterEndpoint := string(os.Args[1])
+	TwitterEndpoint := os.Args[1]
 	TwitterEndpoint += streamParams.With
 	return TwitterEndpoint
 }
@@ -34,7 +34,7 @@ func GetEnvCreds() (string, string, string, string){
 	CK, CS, AT, ATS := os.Getenv("CONSUMER_KEY"), os.Getenv("CONSUMER_SECRET"),
 		os.Getenv("ACCESS_TOKEN"), os.Getenv("ACCESS_TOKEN_SECRET")
 	if len(CK) == 0 || len(CS) == 0 || len(AT) == 0 || len(ATS) == 0 {
-		log.Fatalf("Problem with environment variables credentials:\nConsumer Key Length: %d\nConsumer Secret: %d\nAccess Token Length: %d\nAccess Token Secret Length: %d",
+		log.Fatalf("Problem with environment variables credentials:\nConsumer Key Length: %s\nConsumer Secret: %s\nAccess Token Length: %s\nAccess Token Secret Length: %s",
 					CK, CS, AT, ATS)
 	}
 	return CK, CS, AT, ATS

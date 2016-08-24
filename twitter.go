@@ -1,9 +1,5 @@
 package main
 
-type twitter struct {
-  publicStream []message
-}
-
 // message publicStream filter response message
 type message struct {
   Contributors interface{} `json:"contributors"`
