@@ -1,3 +1,4 @@
+// Main package used for the main logic
 package main
 
 import (
