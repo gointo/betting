@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"net/http"
+	"net/url"
 
 	"github.com/gointo/oauth"
 )
@@ -67,9 +68,25 @@ func GetRequest() *http.Request {
 	return req
 }
 
+func sendTelegram(text string) {
+	v := url.Values{"chat_id": {os.Getenv("TELEGRAM_CHAT_ID")}, "text": {text}}
+	req := "https://api.telegram.org/bot" + os.Getenv("TELEGRAM_TOKEN") + "/sendMessage"
+	log.Printf("telegram post request: %v", req)
+	resp, err := http.PostForm(req, v)
+	if err != nil {
+	  log.Fatal(err)
+	}
+	debug := bufio.NewReader(resp.Body)
+	res, _, _ := debug.ReadLine()
+	var f interface{}
+	_ = json.Unmarshal(res, &f)
+	log.Printf("telegram post response: %v\nchat_id: %d", f, 42)
+}
+
 // TreatResponse run on the stream to get json responses
 func TreatResponse(reader *bufio.Reader, body *message) {
 	//var data map[string]interface{}
+	sendTelegram("bot starting")
 	for {
 		line, _ := reader.ReadBytes('\n')
 		line = bytes.TrimSpace(line)
@@ -84,10 +101,11 @@ func TreatResponse(reader *bufio.Reader, body *message) {
 		//	log.Fatal(err)
 		}
 		if body.User.ID == 349094942 || body.User.ID == 4197365524 {
-			log.Printf(
-				"\nName: \033[1;31m%s\033[0m\n\033[1;32m%s\033[0m\n\n\n",
+			// var dn io.Closer
+			log.Printf("\nName: \033[1;31m%s\033[0m\n\033[1;32m%s\033[0m\n\n\n",
 				body.User.ScreenName,
 				body.Text)
+			sendTelegram(body.Text)
 		//log.Printf("\n%v\n", data)
 		}
 	}
