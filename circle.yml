@@ -24,4 +24,5 @@ dependencies:
 test:
   override:
     - gometalinter --help
-    - gometalinter --exclude={aligncheck,errcheck} --deadline=30s ./...
+    - mkdir -p $CIRCLE_TEST_REPORTS/golinter && gometalinter --exclude={aligncheck,errcheck} --deadline=30s --checkstyle ./... > $CIRCLE_TEST_REPORTS/golinter/alllinters.xml
+    - ls -la
