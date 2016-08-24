@@ -9,6 +9,7 @@ import (
 	"os"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/gointo/oauth"
 )
@@ -83,6 +84,13 @@ func sendTelegram(text string) {
 	log.Printf("telegram post response: %v\nchat_id: %d", f, 42)
 }
 
+func isBet(msg string) string {
+	if strings.Contains(strings.ToLower(msg), "stake") {
+		return "BET: true"
+	}
+	return "BET: false"
+}
+
 // TreatResponse run on the stream to get json responses
 func TreatResponse(reader *bufio.Reader, body *message) {
 	//var data map[string]interface{}
@@ -102,10 +110,11 @@ func TreatResponse(reader *bufio.Reader, body *message) {
 		}
 		if body.User.ID == 349094942 || body.User.ID == 4197365524 {
 			// var dn io.Closer
-			log.Printf("\nName: \033[1;31m%s\033[0m\n\033[1;32m%s\033[0m\n\n\n",
+			log.Printf("msg_id: %s name: \033[1;31m%s\033[0m \033[1;32m%s\033[0m",
+				body.IDStr,
 				body.User.ScreenName,
 				body.Text)
-			sendTelegram(body.Text)
+			sendTelegram(isBet(body.Text) + "\n\n" + body.Text)
 		//log.Printf("\n%v\n", data)
 		}
 	}
