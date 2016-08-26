@@ -85,18 +85,24 @@ func sendTelegram(text string) {
 	log.Printf("telegram post response: %v\nchat_id: %d", f, 42)
 }
 
-func isBet(msg string) string {
+// TODO func getBet(body string) (string, string)
+// TODO getGame(team string, body string) string
+// TODO getStake(body string) string
+
+func isBet(count *int, msg string) bool {
 	//if strings.Contains(strings.ToLower(msg), "stake") {
 	if res, _ := regexp.MatchString("stake.*[0-9](?:.[0-9](?:[0-9])?)?u", strings.ToLower(msg)); res == true {
-		return "BET: true"
+		*count += 1
+		return true
 	}
-	return "BET: false"
+	return false
 }
 
 // TreatResponse run on the stream to get json responses
-func TreatResponse(reader *bufio.Reader, body *message) {
+func TreatResponse(count *int, useless *int, reader *bufio.Reader, body *message) {
 	//var data map[string]interface{}
 	sendTelegram("bot starting")
+	var prevID string
 	for {
 		line, _ := reader.ReadBytes('\n')
 		line = bytes.TrimSpace(line)
@@ -110,13 +116,19 @@ func TreatResponse(reader *bufio.Reader, body *message) {
 			log.Printf("err: %v", err)
 		//	log.Fatal(err)
 		}
-		if body.User.ID == 349094942 || body.User.ID == 4197365524 {
+		if (body.User.ID == 349094942 || body.User.ID == 4197365524) && prevID != body.IDStr {
 			// var dn io.Closer
 			log.Printf("msg_id: %s name: \033[1;31m%s\033[0m \033[1;32m%s\033[0m",
 				body.IDStr,
 				body.User.ScreenName,
 				body.Text)
-			sendTelegram(isBet(body.Text) + "\n\n" + body.Text)
+			if isBet(count, body.Text) {
+				sendTelegram("BET " + string(*count) + "\n\n" + body.Text)
+			} else {
+				sendTelegram("USELESS " + string(*useless) + "\n\n" + body.Text)
+				*useless += 1
+			}
+			prevID = body.IDStr
 		//log.Printf("\n%v\n", data)
 		}
 	}
@@ -124,6 +136,8 @@ func TreatResponse(reader *bufio.Reader, body *message) {
 
 // GetStream launch all the request logic
 func GetStream() {
+	count := 0
+	useless := 1
 	client := GetClient()
 	request := GetRequest()
 	log.Printf("Request: %v", request)
@@ -135,7 +149,7 @@ func GetStream() {
 	log.Println("Response:", response.StatusCode, response.Status)
 	reader := bufio.NewReader(response.Body)
 	var body message
-	TreatResponse(reader, &body)
+	TreatResponse(&count, &useless, reader, &body)
 }
 
 func main() {
