@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"regexp"
 
 	"github.com/gointo/oauth"
 )
@@ -85,7 +86,8 @@ func sendTelegram(text string) {
 }
 
 func isBet(msg string) string {
-	if strings.Contains(strings.ToLower(msg), "stake") {
+	//if strings.Contains(strings.ToLower(msg), "stake") {
+	if res, _ := regexp.MatchString("stake.*[0-9](?:.[0-9](?:[0-9])?)?u", strings.ToLower(msg)); res == true {
 		return "BET: true"
 	}
 	return "BET: false"
