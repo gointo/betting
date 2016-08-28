@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"strconv"
 	"regexp"
 
 	"github.com/gointo/oauth"
@@ -74,20 +75,16 @@ func sendTelegram(text string) {
 	v := url.Values{"chat_id": {os.Getenv("TELEGRAM_CHAT_ID")}, "text": {text}}
 	req := "https://api.telegram.org/bot" + os.Getenv("TELEGRAM_TOKEN") + "/sendMessage"
 	log.Printf("telegram post request: %v", req)
-	resp, err := http.PostForm(req, v)
+	_, err := http.PostForm(req, v)
 	if err != nil {
 	  log.Fatal(err)
 	}
-	debug := bufio.NewReader(resp.Body)
-	res, _, _ := debug.ReadLine()
-	var f interface{}
-	_ = json.Unmarshal(res, &f)
-	log.Printf("telegram post response: %v\nchat_id: %d", f, 42)
+	//debug := bufio.NewReader(resp.Body)
+	//res, _, _ := debug.ReadLine()
+	//var f interface{}
+	//_ = json.Unmarshal(res, &f)
+	//log.Printf("telegram post response: %v\nchat_id: %d", f, 42)
 }
-
-// TODO func getBet(body string) (string, string)
-// TODO getGame(team string, body string) string
-// TODO getStake(body string) string
 
 func isBet(count *int, msg string) bool {
 	//if strings.Contains(strings.ToLower(msg), "stake") {
@@ -98,11 +95,16 @@ func isBet(count *int, msg string) bool {
 	return false
 }
 
+func sendBet(count *int, created string, msg string) {
+	res := "BET " + strconv.Itoa(*count) + "\n" + "DATE: " + created + "\n" + getData(msg)
+	sendTelegram("\n\n" + res + "\n" + msg)
+}
+
 // TreatResponse run on the stream to get json responses
-func TreatResponse(count *int, useless *int, reader *bufio.Reader, body *message) {
+func TreatResponse(count *int, useless int, reader *bufio.Reader, body *message) {
 	//var data map[string]interface{}
 	sendTelegram("bot starting")
-	var prevID string
+	var prevMessage message
 	for {
 		line, _ := reader.ReadBytes('\n')
 		line = bytes.TrimSpace(line)
@@ -113,22 +115,22 @@ func TreatResponse(count *int, useless *int, reader *bufio.Reader, body *message
 		//err := json.Unmarshal(line, &data)
 		//log.Printf("line: %v\ndata: %v", line, data)
 		if err != nil {
-			log.Printf("err: %v", err)
+			log.Print(err)
 		//	log.Fatal(err)
 		}
-		if (body.User.ID == 349094942 || body.User.ID == 4197365524) && prevID != body.IDStr {
+		if (body.User.ID == 349094942 || body.User.ID == 4197365524) && prevMessage.Text != body.Text {
 			// var dn io.Closer
 			log.Printf("msg_id: %s name: \033[1;31m%s\033[0m \033[1;32m%s\033[0m",
 				body.IDStr,
 				body.User.ScreenName,
 				body.Text)
 			if isBet(count, body.Text) {
-				sendTelegram("BET " + string(*count) + "\n\n" + body.Text)
+				sendBet(count, body.CreatedAt, body.Text)
 			} else {
-				sendTelegram("USELESS " + string(*useless) + "\n\n" + body.Text)
-				*useless += 1
+				sendTelegram("USELESS " + strconv.Itoa(useless) + "\n\n" + body.Text)
+				useless += 1
 			}
-			prevID = body.IDStr
+			prevMessage = *body
 		//log.Printf("\n%v\n", data)
 		}
 	}
@@ -149,7 +151,7 @@ func GetStream() {
 	log.Println("Response:", response.StatusCode, response.Status)
 	reader := bufio.NewReader(response.Body)
 	var body message
-	TreatResponse(&count, &useless, reader, &body)
+	TreatResponse(&count, useless, reader, &body)
 }
 
 func main() {
