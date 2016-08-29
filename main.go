@@ -96,7 +96,7 @@ func isBet(count *int, msg string) bool {
 }
 
 func sendBet(count *int, created string, msg string) {
-	res := "BET " + strconv.Itoa(*count) + "\n" + "DATE: " + created + "\n" + getData(msg)
+	res := "BET " + strconv.Itoa(*count) + "\n" + "\n" + getData(created, msg)
 	sendTelegram("\n\n" + res + "\n" + msg)
 }
 
@@ -125,7 +125,7 @@ func TreatResponse(count *int, useless int, reader *bufio.Reader, body *message)
 				body.User.ScreenName,
 				body.Text)
 			if isBet(count, body.Text) {
-				sendBet(count, body.CreatedAt, body.Text)
+				sendBet(count, body.CreatedAt, strings.ToLower(body.Text))
 			} else {
 				sendTelegram("USELESS " + strconv.Itoa(useless) + "\n\n" + body.Text)
 				useless += 1
