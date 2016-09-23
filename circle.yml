@@ -25,3 +25,7 @@ test:
   override:
     - gometalinter --help
     - gometalinter --exclude={aligncheck,errcheck} --deadline=30s ./...
+
+notify:
+  webhooks:
+    - url: https://${TEST}@api.github.com/repos/${CIRCLECI_PROJECT_USERNAME}/${CIRCLECI_PROJECT_REPONAME}/statuses/${CIRCLE_SHA1}
