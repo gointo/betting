@@ -22,7 +22,7 @@ dependencies:
 
 notify:
   webhooks:
-    - url: https://${TEST}@api.github.com/repos/${CIRCLECI_PROJECT_USERNAME}/${CIRCLECI_PROJECT_REPONAME}/statuses/${CIRCLE_SHA1}
+    - url: ${CIRCLECI_PULL_REQUEST}
 
 ## Customize test commands
 test:
