@@ -20,6 +20,10 @@ dependencies:
     - go get -t -d -v ./...
     - go build -v
 
+notify:
+  webhooks:
+    - url: https://${TEST}@api.github.com/repos/${CIRCLECI_PROJECT_USERNAME}/${CIRCLECI_PROJECT_REPONAME}/statuses/${CIRCLE_SHA1}
+
 ## Customize test commands
 test:
   override:
